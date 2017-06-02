@@ -1,2 +1,2 @@
-# ballz
+# Ballz
 Ballz game online!

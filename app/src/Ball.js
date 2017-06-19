@@ -9,6 +9,7 @@ class Ball {
         this.y = this.game.lowestY
     }
     remove () {
+        this.velocityVector = null
         this.game.removeBall(this)
     }
     reflect (reflectArr) {
@@ -38,7 +39,22 @@ class Ball {
         this.velocityVector[1] -= this.game.options.game.gravity
     }
     checkIfShouldDie () {
-        if (this.y > this.game.lowestY) this.remove()
+        if (this.y > this.game.lowestY) {
+            if (this.game.onGroundBallX === -1) {
+                this.game.onGroundBallX = this.x
+            }
+            else if (this.game.onGroundBallX !== -1 && this.game.nextOnGroundBallX === -1) {
+                this.game.nextOnGroundBallX = this.x
+            }
+            this.remove()
+            if (this.game.balls.length === 0) {
+                this.game.nextOnGroundBallX = -1
+                this.game.goNextStep()
+                setTimeout(()=>{
+                    this.game.isLocked = false
+                }, 500)
+            }
+        }
     }
 
     // Moves and Animation

@@ -25,6 +25,8 @@ class Box {
         this.onStepChanged()
     }
     remove () {
+        this.position = null
+        this.positionOnDisplay = null
         this.game.removeBox(this)
     }
     checkCollisionWith (ball) {

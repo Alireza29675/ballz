@@ -30,6 +30,8 @@ class Game {
         // Boxes and Balls arrays
         this.boxes = []
         this.balls = []
+        // Let's play
+        this.goNextStep()
     }
     initalizeDynamicVariables () {
         // Game size
@@ -42,8 +44,14 @@ class Game {
         this.highestY = this.options.balls.radius
         // Box Dynamic vars
         this.boxSize = this.width / this.options.game.rowCount
-        // Setup logic
+        // Logic setup
         this.step = 0
+        this.isLocked = false
+        this.ballzCount = 1
+        this.onGroundBallX = this.width/2
+        this.nextOnGroundBallX = -1
+        this.howManyShouldShoot = 0
+        this.shootAngle = [1, 1]
     }
     
     // Flow Controls
@@ -63,8 +71,15 @@ class Game {
     }
 
     // Game Methods
-    shootBall (startX, angelVector) {
-        this.balls.push(new Ball(this, startX, angelVector))
+    throwBall (angleVector) {
+        this.balls.push(new Ball(this, this.onGroundBallX, angleVector))
+    }
+    shoot (angleVector) {
+        if (!this.isLocked) {
+            this.isLocked = true
+            this.shootAngle = angleVector
+            this.howManyShouldShoot = this.step
+        }
     }
     removeBall (which) {
         const index = this.balls.indexOf(which)
@@ -93,15 +108,43 @@ class Game {
     }
 
     // Render Methods
-    render () {
+    render (frames) {
         this.clear()
+        if (frames.index % 5 === 0 && this.howManyShouldShoot > 0) this.shootIfNeeded()
         this.drawBallsAndBoxes()
         this.drawGround()
+    }
+    shootIfNeeded () {
+        this.throwBall(this.shootAngle.slice(0))
+        this.howManyShouldShoot--
+        if (this.howManyShouldShoot === 0) {
+            if (this.nextOnGroundBallX !== -1) {
+                this.onGroundBallX = this.nextOnGroundBallX
+                this.nextOnGroundBallX = -1
+            }
+            else {
+                this.onGroundBallX = -1
+            }
+        }
     }
     clear () {
         this.ctx.clearRect(0, 0, this.width, this.height)
     }
     drawGround () {
+        // Drawing onGround Ball
+        if (this.onGroundBallX !== -1) {
+            this.ctx.beginPath()
+            this.ctx.arc(this.onGroundBallX, this.lowestY, this.options.balls.radius, 0, 2 * Math.PI, false)
+            this.ctx.fillStyle = this.options.balls.color
+            this.ctx.fill()
+        }
+        if (this.nextOnGroundBallX !== -1) {
+            this.ctx.beginPath()
+            this.ctx.arc(this.nextOnGroundBallX, this.lowestY, this.options.balls.radius, 0, 2 * Math.PI, false)
+            this.ctx.fillStyle = this.options.balls.color
+            this.ctx.fill()
+        }
+        // Drawing Ground
         this.ctx.fillStyle = this.options.ground.color
         this.ctx.fillRect(0, this.height - this.options.ground.height, this.width, this.height)
     }

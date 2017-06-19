@@ -52,7 +52,7 @@ class Ball {
                 this.game.goNextStep()
                 setTimeout(()=>{
                     this.game.isLocked = false
-                }, 500)
+                }, 300)
             }
         }
     }

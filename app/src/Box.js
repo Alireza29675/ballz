@@ -17,7 +17,7 @@ class Box {
         this.ctx = this.game.ctx
         this.step = this.game.step
         this.place = place
-        this.weight = 3
+        this.weight = (this.step + 1) * Math.floor(Math.random() * 2 + 1)
         this.size = this.game.boxSize
         this.color = nextColor()
         this.position = {x: this.place * this.size, y: 0}
@@ -36,11 +36,20 @@ class Box {
         if (distX > (this.size/2 + ball.radius)) return [1, 1]
         if (distY > (this.size/2 + ball.radius)) return [1, 1]
         // If has collisions
+        let ret = [-1, -1]
+        if (distY < this.size/2) {
+            if (ball.velocityVector[0] >= 0) ball.x = this.positionOnDisplay.x - ball.radius
+            else ball.x = this.positionOnDisplay.x + this.size + ball.radius
+            ret = [-1, 1]
+        }
+        else if (distX < this.size/2) {
+            if (ball.velocityVector[1] >= 0) ball.y = this.positionOnDisplay.y - ball.radius
+            else ball.y = this.positionOnDisplay.y + this.size + ball.radius
+            ret = [1, -1]
+        }
         this.onBallCollised(ball)
-        if (distY < this.size/2) return [-1, 1]
-        if (distX < this.size/2) return [1, -1]
         // If it collised with a corner
-        return [-1, -1]
+        return ret
     }
 
     // Listeners
@@ -64,6 +73,11 @@ class Box {
         this.ctx.fillStyle = this.color
         this.ctx.fillRect(this.positionOnDisplay.x, this.positionOnDisplay.y, this.size, this.size)
         
+        this.ctx.font="20px Arial";
+        this.ctx.textAlign="center"; 
+        this.ctx.textBaseline = "middle";
+        this.ctx.fillStyle = "#FFF";
+        this.ctx.fillText(this.weight, this.positionOnDisplay.x + this.size/2, this.positionOnDisplay.y + this.size/2)
     }
 }
 

@@ -5,7 +5,8 @@ const options = {
     game: {
         background: '#333',
         gravity: -0.001,
-        rowCount: 6
+        rowCount: 6,
+        triggerBallsCount: 10
     },
     ground: {
         height: 50,
@@ -13,7 +14,9 @@ const options = {
     },
     balls: {
         radius: 5,
-        color: 'white'
+        color: 'white',
+        moveSpeed: 8,
+        generateSpeed: 5
     }
 }
 
@@ -27,6 +30,10 @@ class Game {
         this.canvas.style.background = this.options.game.background
         // Dynamic variables setup
         this.initalizeDynamicVariables()
+        // Trigger Listeners
+        this.canvas.addEventListener('mousedown', this.onDragStarted.bind(this))
+        this.canvas.addEventListener('mousemove', this.onPointerMove.bind(this))
+        this.canvas.addEventListener('mouseup', this.onDragEnded.bind(this))
         // Boxes and Balls arrays
         this.boxes = []
         this.balls = []
@@ -52,6 +59,11 @@ class Game {
         this.nextOnGroundBallX = -1
         this.howManyShouldShoot = 0
         this.shootAngle = [1, 1]
+        // Trigger Setup
+        this.trigger = {
+            start: [0, 0],
+            end: [0, 0]
+        }
     }
     
     // Flow Controls
@@ -106,14 +118,6 @@ class Game {
         which = null // Use garbage collector to remove this ball from memory
         if (index > -1) this.boxes[rowIndex].splice(index, 1)
     }
-
-    // Render Methods
-    render (frames) {
-        this.clear()
-        if (frames.index % 5 === 0 && this.howManyShouldShoot > 0) this.shootIfNeeded()
-        this.drawBallsAndBoxes()
-        this.drawGround()
-    }
     shootIfNeeded () {
         this.throwBall(this.shootAngle.slice(0))
         this.howManyShouldShoot--
@@ -127,22 +131,62 @@ class Game {
             }
         }
     }
+    drawAFakeBall (x, y, sizeRatio) {
+        this.ctx.beginPath()
+        this.ctx.arc(x, y, this.options.balls.radius * sizeRatio, 0, 2 * Math.PI, false)
+        this.ctx.fillStyle = this.options.balls.color
+        this.ctx.fill()
+    }
+
+    // Trigger Handle
+    triggerIsValid () {
+        const deltaX = this.trigger.start[0] - this.trigger.end[0]
+        const deltaY = this.trigger.start[1] - this.trigger.end[1]
+        const dist = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2))
+        const angleRate = deltaY / Math.abs(deltaX)
+        return dist > 50 && angleRate < -0.1
+    }
+    onDragStarted (e) {
+        if (!this.isLocked) {
+            this.mouseIsDown = true
+            this.trigger.start = this.trigger.end = [e.offsetX, e.offsetY]
+        }
+    }
+    onPointerMove (e) {
+        if (this.mouseIsDown) {
+            this.trigger.end = [e.offsetX, e.offsetY]
+        }
+    }
+    onDragEnded (e) {
+        this.mouseIsDown = false
+        if (!this.isLocked && this.triggerIsValid()) {
+            const deltaX = this.trigger.start[0] - this.trigger.end[0]
+            const deltaY = this.trigger.start[1] - this.trigger.end[1]
+            let angle = Math.atan(deltaY / Math.abs(deltaX))
+            this.shoot([Math.cos(angle) * Math.sign(deltaX) * this.options.balls.moveSpeed, Math.sin(angle) * this.options.balls.moveSpeed])
+        }
+        this.trigger.end = this.trigger.start
+    }
+
+
+    // Render Methods
+    render (frames) {
+        this.clear()
+        if (frames.index % this.options.balls.generateSpeed === 0 && this.howManyShouldShoot > 0) this.shootIfNeeded()
+        this.drawBallsAndBoxes()
+        this.drawGround()
+        this.drawTrigger()
+    }
     clear () {
         this.ctx.clearRect(0, 0, this.width, this.height)
     }
     drawGround () {
         // Drawing onGround Ball
         if (this.onGroundBallX !== -1) {
-            this.ctx.beginPath()
-            this.ctx.arc(this.onGroundBallX, this.lowestY, this.options.balls.radius, 0, 2 * Math.PI, false)
-            this.ctx.fillStyle = this.options.balls.color
-            this.ctx.fill()
+            this.drawAFakeBall(this.onGroundBallX, this.lowestY, 1)
         }
         if (this.nextOnGroundBallX !== -1) {
-            this.ctx.beginPath()
-            this.ctx.arc(this.nextOnGroundBallX, this.lowestY, this.options.balls.radius, 0, 2 * Math.PI, false)
-            this.ctx.fillStyle = this.options.balls.color
-            this.ctx.fill()
+            this.drawAFakeBall(this.nextOnGroundBallX, this.lowestY, 1)
         }
         // Drawing Ground
         this.ctx.fillStyle = this.options.ground.color
@@ -151,6 +195,17 @@ class Game {
     drawBallsAndBoxes () {
         for (let row of this.boxes) for (let box of row) box.render()
         for (let ball of this.balls) ball.render()
+    }
+    drawTrigger () {
+        if (this.triggerIsValid()) {
+            const deltaX = this.trigger.start[0] - this.trigger.end[0]
+            const deltaY = this.trigger.start[1] - this.trigger.end[1]
+            for (let i = 0; i < this.options.game.triggerBallsCount; i++)
+                this.drawAFakeBall(
+                    this.trigger.start[0] - (deltaX * i / this.options.game.triggerBallsCount),
+                    this.trigger.start[1] - (deltaY * i / this.options.game.triggerBallsCount),
+                    1 / Math.sqrt(i + 1))
+        }
     }
 }
 

@@ -6,6 +6,9 @@ class Ball {
         this.x = startX
         this.y = this.game.lowestY
     }
+    remove () {
+        this.game.removeBall(this)
+    }
     reflectX () {
         this.velocityVector[0] *= -1
     }
@@ -13,6 +16,7 @@ class Ball {
         this.velocityVector[1] *= -1
     }
     computeCollisions () {
+        // Walls Collisions
         if (this.x >= this.game.highestX) {
             this.x = this.game.highestX
             this.reflectX()
@@ -26,6 +30,12 @@ class Ball {
             this.reflectY()
         }
     }
+    computeGravity () {
+        this.velocityVector[1] -= this.game.options.game.gravity
+    }
+    checkIfShouldDie () {
+        if (this.y > this.game.lowestY) this.remove()
+    }
 
     // Moves and Animation
     render () {
@@ -34,8 +44,10 @@ class Ball {
     }
     changes () {
         this.computeCollisions()
+        this.computeGravity()
         this.x += this.velocityVector[0]
         this.y += this.velocityVector[1]
+        this.checkIfShouldDie()
     }
     draw () {
         this.ctx.beginPath()

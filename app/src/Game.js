@@ -58,7 +58,7 @@ class Game {
     }
     goNextStep () {
         this.step++
-        for (let box of this.boxes) box.onStepChanged()
+        for (let row of this.boxes) for (let box of row) box.onStepChanged()
         this.insertBoxRow()
     }
 
@@ -74,14 +74,22 @@ class Game {
     insertBoxRow () {
         const countInThisRow = Math.floor(Math.random() * (this.options.game.rowCount - 1)) + 1
         const usedIndexes = []
+        const row = []
         let index
         for (let i = 0; i < countInThisRow; i++) {
             do {
                 index = Math.floor(Math.random() * this.options.game.rowCount)
             } while (usedIndexes.indexOf(index) !== -1)
             usedIndexes.push(index)
-            this.boxes.push(new Box(this, index))
+            row.push(new Box(this, index))
         }
+        this.boxes.push(row)
+    }
+    removeBox (which) {
+        const rowIndex = which.step - 1
+        const index = this.boxes[rowIndex].indexOf(which)
+        which = null // Use garbage collector to remove this ball from memory
+        if (index > -1) this.boxes[rowIndex].splice(index, 1)
     }
 
     // Render Methods
@@ -98,7 +106,7 @@ class Game {
         this.ctx.fillRect(0, this.height - this.options.ground.height, this.width, this.height)
     }
     drawBallsAndBoxes () {
-        for (let box of this.boxes) box.render()
+        for (let row of this.boxes) for (let box of row) box.render()
         for (let ball of this.balls) ball.render()
     }
 }

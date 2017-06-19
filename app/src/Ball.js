@@ -3,31 +3,35 @@ class Ball {
         this.game = game
         this.ctx = this.game.ctx
         this.velocityVector = velocityVector
+        this.radius = this.game.options.balls.radius
+        this.weight = 1
         this.x = startX
         this.y = this.game.lowestY
     }
     remove () {
         this.game.removeBall(this)
     }
-    reflectX () {
-        this.velocityVector[0] *= -1
-    }
-    reflectY () {
-        this.velocityVector[1] *= -1
+    reflect (reflectArr) {
+        this.velocityVector[0] *= reflectArr[0]
+        this.velocityVector[1] *= reflectArr[1]
     }
     computeCollisions () {
         // Walls Collisions
         if (this.x >= this.game.highestX) {
             this.x = this.game.highestX
-            this.reflectX()
+            this.reflect([-1, 1])
         }
         if (this.x <= this.game.lowestX) {
             this.x = this.game.lowestX
-            this.reflectX()
+            this.reflect([-1, 1])
         }
         if (this.y <= this.game.highestY) {
             this.y = this.game.highestY
-            this.reflectY()
+            this.reflect([1, -1])
+        }
+        // Boxes Collisions
+        for (let row of this.game.boxes) for (let box of row) {
+            this.reflect(box.checkCollisionWith(this))
         }
     }
     computeGravity () {
@@ -51,7 +55,7 @@ class Ball {
     }
     draw () {
         this.ctx.beginPath()
-        this.ctx.arc(this.x, this.y, this.game.options.balls.radius, 0, 2 * Math.PI, false)
+        this.ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false)
         this.ctx.fillStyle = this.game.options.balls.color
         this.ctx.fill()
     }

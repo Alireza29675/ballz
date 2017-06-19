@@ -24,9 +24,33 @@ class Box {
         this.positionOnDisplay = {x: this.position.x, y: -this.size}
         this.onStepChanged()
     }
+    remove () {
+        this.game.removeBox(this)
+    }
+    checkCollisionWith (ball) {
+        const distX = Math.abs(ball.x - this.positionOnDisplay.x - this.size/2)
+        const distY = Math.abs(ball.y - this.positionOnDisplay.y - this.size/2)
+        // If no collision detected
+        if (distX > (this.size/2 + ball.radius)) return [1, 1]
+        if (distY > (this.size/2 + ball.radius)) return [1, 1]
+        // If has collisions
+        this.onBallCollised(ball)
+        if (distY < this.size/2) return [-1, 1]
+        if (distX < this.size/2) return [1, -1]
+        // If it collised with a corner
+        return [-1, -1]
+    }
+
+    // Listeners
     onStepChanged () {
         this.position.y = ((this.game.step - this.step) * this.size) + this.size
     }
+    onBallCollised (ball) {
+        this.weight = Math.max(0, this.weight - ball.weight)
+        if (this.weight === 0) this.remove()
+    }
+
+    // Moves and Animation
     render () {
         this.changes()
         this.draw()
